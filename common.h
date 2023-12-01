@@ -1,0 +1,33 @@
+#pragma once
+#include <cstdint>
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+typedef float f32;
+typedef double f64;
+
+struct RenderingContext {
+	u32 bpp;
+	u32 width;
+	u32 height;
+	u32 pitch;
+	void* pixels;
+};
+struct Vec2 {
+	i32 x,y;
+	inline bool operator==(Vec2 const& rhs) {return this->x==rhs.x && this->y==rhs.y;}
+	inline Vec2 operator+(Vec2 const& rhs) {
+		return Vec2{this->x + rhs.x, this->y + rhs.y};
+	}
+	inline Vec2 operator-(Vec2 const& rhs){
+		return Vec2{this->x - rhs.x, this->y - rhs.y};
+	}
+};
+struct Vec2f{
+	f32 x,y;
+};
