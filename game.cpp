@@ -2,7 +2,7 @@
 #include "game.h"
 #include <math.h>
 //Midpoint is (0.5,0.5)?
-Ship globalShip = {{0.5f, 0.5f},0.0f, 0.0f};
+Ship globalShip = {{0.5f, 0.5f}, {0.0f,0.0f}, 0.0f};
 Vec2f asteroidsPos[10];
 
 
@@ -48,10 +48,10 @@ void GameLoop(Controls controls, u32 dt)
 	f32 reciprocalDt = 1.f/(f32)dt;
 	f32 addedAcceleration = reciprocalDt*ACCELERATION;
 	if(controls.upPressed){
-		globalShip.acceleration += addedAcceleration;
-	}
-	if(controls.downPressed){//Asteroids doesn't have a "down button"
-	//	globalShip.acceleration -= addedAcceleration;
+		f32 orientationX = cosf(DegreeToRadians(-globalShip.angle));
+		f32 orientationY = sinf(DegreeToRadians(-globalShip.angle));
+		globalShip.acceleration.x += addedAcceleration*reciprocalDt*orientationX;
+		globalShip.acceleration.y += addedAcceleration*reciprocalDt*orientationY;
 	}
 	if(controls.leftPressed){
 		globalShip.angle -= reciprocalDt*ANGULAR_VELOCITY;
@@ -59,20 +59,10 @@ void GameLoop(Controls controls, u32 dt)
 	if(controls.rightPressed){
 		globalShip.angle += reciprocalDt*ANGULAR_VELOCITY;
 	}
-	f32 angX = cosf(DegreeToRadians(-globalShip.angle));
-	f32 angY = sinf(DegreeToRadians(-globalShip.angle));
 
-
-	globalShip.pos.x += globalShip.acceleration*reciprocalDt*angX;
-	globalShip.pos.y += globalShip.acceleration*reciprocalDt*angY;
+	globalShip.pos += globalShip.acceleration;
 	RepositionShip();
 
-	//TODO: this is wrong, acceleration should take direction into consideration
-	f32 shipAccelDrag = (f32)((i32)(globalShip.acceleration != 0))*reciprocalDt*ACCEL_DRAG;
-	if(globalShip.acceleration > 0.f){
-		shipAccelDrag = -shipAccelDrag;
-	}
-	globalShip.acceleration += shipAccelDrag*reciprocalDt;
-
-	globalShip.acceleration = clamp(globalShip.acceleration, -MAX_ACCEL, MAX_ACCEL);
+	globalShip.acceleration.x = clamp(globalShip.acceleration.x, -MAX_ACCEL, MAX_ACCEL);
+	globalShip.acceleration.y = clamp(globalShip.acceleration.y, -MAX_ACCEL, MAX_ACCEL);
 }

@@ -12,8 +12,16 @@
 
 
 
-static SDL_Texture *shipTexture;
+struct AnimatedSprite {
+	SDL_Texture** frames;
+	u32 count;
+	u32 index;
+	bool active;
+};
+
+//static SDL_Texture *shipTexture;
 static SDL_Texture *asteroidTexture;
+static AnimatedSprite shipSprite;
 
 SDL_Texture* LoadTexture(SDL_Renderer* renderer, char* path)
 {
@@ -28,6 +36,21 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, char* path)
 	SDL_FreeSurface(s);
 	return t;
 }
+AnimatedSprite LoadAnimatedSprite(SDL_Renderer* renderer, char* prefix, u32 count)
+{
+	AnimatedSprite sprite = {0, count, 0, false};
+	sprite.frames = (SDL_Texture**)malloc(sizeof(SDL_Texture*)*count);
+	u32 pathLen = SDL_strlen(prefix);
+	char *fileName = (char*)malloc(pathLen+2);
+	SDL_strlcpy(fileName, prefix, pathLen+1);
+	while(count > 0){
+		*(fileName+pathLen) = '0'+count;
+		*(fileName+pathLen+1) = 0;
+		*(sprite.frames + count - 1) = LoadTexture(renderer, fileName);
+		count -= 1;
+	}
+	return sprite;
+}
 void RenderGame(SDL_Renderer* renderer)
 {
 	//TODO: Not working properly. check numbers in debugger.
@@ -36,7 +59,13 @@ void RenderGame(SDL_Renderer* renderer)
 	f64 angle = (f64)globalShip.angle;
 
 
-
+	SDL_Texture* shipTexture = shipSprite.frames[0];
+	if(shipSprite.active || shipSprite.index != 0){
+		if(shipSprite.index == shipSprite.count){
+			shipSprite.index = 0;
+		}
+		shipTexture = shipSprite.frames[shipSprite.index++];
+	}
 	SDL_RenderCopyEx(renderer, shipTexture, NULL, &r, 90.0+angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
 }
 int main(int, char**)
@@ -78,8 +107,10 @@ int main(int, char**)
 	renderCtx.width = RENDER_WIDTH;
 	renderCtx.pitch = renderCtx.bpp * renderCtx.width;
 
-	shipTexture = LoadTexture(renderer, "assets/ship.bmp");
+//	shipTexture = LoadTexture(renderer, "assets/ship.bmp");
 	asteroidTexture = LoadTexture(renderer, "assets/asteroid.bmp");
+	shipSprite = LoadAnimatedSprite(renderer, "assets/ship_frames/ship_f", 7);
+
 
 	bool quit = false;
 	Controls controls = {0};
@@ -105,9 +136,7 @@ int main(int, char**)
 					}
 					else if(e.key.keysym.sym == SDLK_UP){
 						controls.upPressed = true;
-					}
-					else if(e.key.keysym.sym == SDLK_DOWN){
-						controls.downPressed = true;
+						shipSprite.active = true;
 					}
 					break;
 				case SDL_KEYUP:
@@ -119,9 +148,7 @@ int main(int, char**)
 					}
 					else if(e.key.keysym.sym == SDLK_UP){
 						controls.upPressed = false;
-					}
-					else if(e.key.keysym.sym == SDLK_DOWN){
-						controls.downPressed = false;
+						shipSprite.active = false;
 					}
 					break;
 				default:
@@ -135,6 +162,7 @@ int main(int, char**)
 			//SDL_RenderCopyEx(renderer, shipTexture, NULL, &r, -90.0, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
 			//SDL_RenderCopy(renderer, shipTexture, NULL, &r);
 			GameLoop(controls, dt);
+			//TODO: Set a boundary of game logic vs rendering. does the game logic return state for the rendering to look at?
 			RenderGame(renderer);
 			SDL_RenderPresent(renderer);
 		}

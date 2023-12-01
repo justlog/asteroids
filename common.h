@@ -30,4 +30,17 @@ struct Vec2 {
 };
 struct Vec2f{
 	f32 x,y;
+	inline bool operator==(Vec2f const& rhs) {return this->x==rhs.x && this->y==rhs.y;}
+	inline Vec2f operator+(Vec2f const& rhs) {
+		return Vec2f{this->x + rhs.x, this->y + rhs.y};
+	}
+	inline Vec2f operator-(Vec2f const& rhs){
+		return Vec2f{this->x - rhs.x, this->y - rhs.y};
+	}
+	inline Vec2f operator +=(Vec2f const&rhs) {
+		//return Vec2f{this->x + rhs.x, this->y + rhs.y};
+		this->x += rhs.x;
+		this->y += rhs.y;
+		return *this;
+	}
 };
