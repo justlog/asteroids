@@ -23,7 +23,7 @@ struct AnimatedSprite {
 static SDL_Texture *asteroidTexture;
 static AnimatedSprite shipSprite;
 
-SDL_Texture* LoadTexture(SDL_Renderer* renderer, char* path)
+SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* path)
 {
 	SDL_Surface* s = SDL_LoadBMP(path);
 	if(s == NULL){
@@ -36,17 +36,14 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, char* path)
 	SDL_FreeSurface(s);
 	return t;
 }
-AnimatedSprite LoadAnimatedSprite(SDL_Renderer* renderer, char* prefix, u32 count)
+AnimatedSprite LoadAnimatedSprite(SDL_Renderer* renderer, const char** paths, u32 count)
 {
 	AnimatedSprite sprite = {0, count, 0, false};
 	sprite.frames = (SDL_Texture**)malloc(sizeof(SDL_Texture*)*count);
-	u32 pathLen = SDL_strlen(prefix);
-	char *fileName = (char*)malloc(pathLen+2);
-	SDL_strlcpy(fileName, prefix, pathLen+1);
+	SDL_Texture** frames = sprite.frames;
 	while(count > 0){
-		*(fileName+pathLen) = '0'+count;
-		*(fileName+pathLen+1) = 0;
-		*(sprite.frames + count - 1) = LoadTexture(renderer, fileName);
+		*frames = LoadTexture(renderer, *paths++);
+		frames++;
 		count -= 1;
 	}
 	return sprite;
@@ -64,7 +61,9 @@ void RenderGame(SDL_Renderer* renderer)
 		if(shipSprite.index == shipSprite.count){
 			shipSprite.index = 0;
 		}
-		shipTexture = shipSprite.frames[shipSprite.index++];
+		else{
+			shipTexture = shipSprite.frames[shipSprite.index++];
+		}
 	}
 	SDL_RenderCopyEx(renderer, shipTexture, NULL, &r, 90.0+angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
 }
@@ -107,9 +106,17 @@ int main(int, char**)
 	renderCtx.width = RENDER_WIDTH;
 	renderCtx.pitch = renderCtx.bpp * renderCtx.width;
 
-//	shipTexture = LoadTexture(renderer, "assets/ship.bmp");
 	asteroidTexture = LoadTexture(renderer, "assets/asteroid.bmp");
-	shipSprite = LoadAnimatedSprite(renderer, "assets/ship_frames/ship_f", 7);
+	const char* shipSpritePaths[] = {
+		"assets/ship_frames/ship_f1.bmp",
+		"assets/ship_frames/ship_f2.bmp",
+		"assets/ship_frames/ship_f3.bmp",
+		"assets/ship_frames/ship_f4.bmp",
+		"assets/ship_frames/ship_f5.bmp",
+		"assets/ship_frames/ship_f6.bmp",
+		"assets/ship_frames/ship_f7.bmp",
+	};
+	shipSprite = LoadAnimatedSprite(renderer, shipSpritePaths, 7);
 
 
 	bool quit = false;
@@ -159,8 +166,6 @@ int main(int, char**)
 			startTime = endTime;
 			SDL_RenderClear(renderer);
 			SDL_Rect r = {RENDER_WIDTH/2-25, RENDER_HEIGHT/2-25, 50, 50};
-			//SDL_RenderCopyEx(renderer, shipTexture, NULL, &r, -90.0, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
-			//SDL_RenderCopy(renderer, shipTexture, NULL, &r);
 			GameLoop(controls, dt);
 			//TODO: Set a boundary of game logic vs rendering. does the game logic return state for the rendering to look at?
 			RenderGame(renderer);
