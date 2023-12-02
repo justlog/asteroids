@@ -9,7 +9,8 @@ Asteroid asteroids[ASTEROID_COUNT];
 
 
 //TODO: Change values to represent "how many x per one second"
-#define SHIP_ACCELERATION 0.06f
+#define SHIP_ACCELERATION 0.20f
+//#define SHIP_ACCELERATION 0.06f
 #define MIN_ASTEROID_ACCELERATION 0.05f
 #define MAX_ASTEROID_ACCELERATION 0.1f
 //#define MIN_ASTEROID_ACCELERATION 0.01f
