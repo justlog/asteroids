@@ -10,6 +10,9 @@
 #define SHIP_TEXTURE_WIDTH 50
 #define SHIP_TEXTURE_HEIGHT 50
 
+#define ASTEROID_TEXTURE_WIDTH 50
+#define ASTEROID_TEXTURE_HEIGHT 50
+
 
 
 struct AnimatedSprite {
@@ -19,7 +22,6 @@ struct AnimatedSprite {
 	bool active;
 };
 
-//static SDL_Texture *shipTexture;
 static SDL_Texture *asteroidTexture;
 static AnimatedSprite shipSprite;
 
@@ -51,8 +53,8 @@ AnimatedSprite LoadAnimatedSprite(SDL_Renderer* renderer, const char** paths, u3
 void RenderGame(SDL_Renderer* renderer)
 {
 	//TODO: Not working properly. check numbers in debugger.
-	const u32 HALF_SHIP_WIDTH = SHIP_TEXTURE_WIDTH/2;
-	SDL_Rect r = {(i32)(RENDER_WIDTH*globalShip.pos.x - HALF_SHIP_WIDTH), (i32)(RENDER_HEIGHT - RENDER_HEIGHT*globalShip.pos.y)-25, 50, 50};
+	const i32 HALF_SHIP_WIDTH = SHIP_TEXTURE_WIDTH/2;
+	SDL_Rect r = {(i32)(RENDER_WIDTH*globalShip.pos.x - HALF_SHIP_WIDTH), (i32)(RENDER_HEIGHT - RENDER_HEIGHT*globalShip.pos.y)-HALF_SHIP_WIDTH, 50, 50};
 	f64 angle = (f64)globalShip.angle;
 
 
@@ -66,6 +68,14 @@ void RenderGame(SDL_Renderer* renderer)
 		}
 	}
 	SDL_RenderCopyEx(renderer, shipTexture, NULL, &r, 90.0+angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
+	const i32 HALF_ASTEROID_WIDTH = ASTEROID_TEXTURE_WIDTH/2;
+	for(u32 i = 0; i < ASTEROID_COUNT; ++i){
+		Asteroid *asteroid = &asteroids[i];
+		i32 x = (i32)(RENDER_WIDTH*asteroid->pos.x) - HALF_SHIP_WIDTH;
+		i32 y = (i32)(RENDER_HEIGHT*asteroid->pos.y) - HALF_SHIP_WIDTH;
+		SDL_Rect asteroidRect = {x, y, ASTEROID_TEXTURE_WIDTH, ASTEROID_TEXTURE_HEIGHT};
+		SDL_RenderCopyEx(renderer, asteroidTexture, NULL, &asteroidRect, asteroid->angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
+	}
 }
 int main(int, char**)
 {
@@ -123,11 +133,13 @@ int main(int, char**)
 	Controls controls = {0};
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-	u32 startTime = SDL_GetTicks();
-	u32 endTime = SDL_GetTicks();
+	u64 frequency = SDL_GetPerformanceFrequency();
+	u64 startTime = SDL_GetPerformanceCounter();
+	u64 endTime = SDL_GetPerformanceCounter();
+	f64 targetFPS = 60;
 	while(!quit)
 	{
-		u32 dt = endTime - startTime;
+		u64 dt = endTime - startTime;
 		SDL_Event e;
 		while (SDL_PollEvent(&e) != NULL){
 			switch(e.type){
@@ -144,6 +156,9 @@ int main(int, char**)
 					else if(e.key.keysym.sym == SDLK_UP){
 						controls.upPressed = true;
 						shipSprite.active = true;
+					}
+					else if(e.key.keysym.sym == SDLK_ESCAPE){
+						quit = true;
 					}
 					break;
 				case SDL_KEYUP:
@@ -162,16 +177,18 @@ int main(int, char**)
 					break;
 			}
 		}
-		if(dt > 1000.0/60.0){
+		if(dt > (f64)frequency/targetFPS){
 			startTime = endTime;
+			printf("dt:%llu\n", dt);
+			//printf("%llu\n", SDL_GetPerformanceFrequency());
 			SDL_RenderClear(renderer);
 			SDL_Rect r = {RENDER_WIDTH/2-25, RENDER_HEIGHT/2-25, 50, 50};
-			GameLoop(controls, dt);
+			GameLoop(controls, dt, frequency);
 			//TODO: Set a boundary of game logic vs rendering. does the game logic return state for the rendering to look at?
 			RenderGame(renderer);
 			SDL_RenderPresent(renderer);
 		}
-		endTime = SDL_GetTicks();
+		endTime = SDL_GetPerformanceCounter();
 	}
 	return 0;
 }
