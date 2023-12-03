@@ -9,18 +9,15 @@ Asteroid asteroids[ASTEROID_COUNT];
 
 
 //TODO: Change values to represent "how many x per one second"
-#define SHIP_ACCELERATION 0.20f
-//#define SHIP_ACCELERATION 0.06f
+#define SHIP_ACCELERATION 0.15f
 #define MIN_ASTEROID_ACCELERATION 0.05f
 #define MAX_ASTEROID_ACCELERATION 0.1f
-//#define MIN_ASTEROID_ACCELERATION 0.01f
-//#define MAX_ASTEROID_ACCELERATION 0.05f
 #define ASTEROID_ANGULAR_VELOCITY 10.f
-#define SHIP_ANGULAR_VELOCITY 35.f
-#define MAX_ACCEL 0.3f
+#define SHIP_ANGULAR_VELOCITY 45.f
+#define SHIP_MAX_ACCEL 0.01f
 
 
-#define DEG_TO_RAD 3.14159265359/180;
+#define DEG_TO_RAD 3.14159265359/180.0;
 
 static bool gameInitialized = false;
 
@@ -76,8 +73,6 @@ void GameLoop(Controls controls, u64 dt, u64 frequency)
 	}
 
 	f64 timeElapsedInSeconds = (f64)dt/(f64)frequency;
-	//f64 reciprocalDt = (1.f/(f64)dt);
-	//f32 reciprocalDt = 1.f-(1.f/(f32)dt);
 	f32 addedAcceleration = (f32)(timeElapsedInSeconds*SHIP_ACCELERATION);
 	if(controls.upPressed){
 		f32 orientationX = cosf(DegreeToRadians(-globalShip.angle));
@@ -95,8 +90,8 @@ void GameLoop(Controls controls, u64 dt, u64 frequency)
 	globalShip.pos += globalShip.acceleration;
 	RepositionEntity(&globalShip.pos);
 
-	globalShip.acceleration.x = clamp(globalShip.acceleration.x, -MAX_ACCEL, MAX_ACCEL);
-	globalShip.acceleration.y = clamp(globalShip.acceleration.y, -MAX_ACCEL, MAX_ACCEL);
+	globalShip.acceleration.x = clamp(globalShip.acceleration.x, -SHIP_MAX_ACCEL, SHIP_MAX_ACCEL);
+	globalShip.acceleration.y = clamp(globalShip.acceleration.y, -SHIP_MAX_ACCEL, SHIP_MAX_ACCEL);
 
 	for(u32 i = 0 ; i < ASTEROID_COUNT; ++i){
 		Asteroid *ast = &asteroids[i];
