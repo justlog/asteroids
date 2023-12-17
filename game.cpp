@@ -4,7 +4,6 @@
 #include <stdlib.h>
 //Midpoint is (0.5,0.5)?
 Ship globalShip;
-//Ship globalShip = {{0.5f, 0.5f}, {0.0f,0.0f}, 0.0f};
 Asteroid asteroids[ASTEROID_COUNT];
 
 
@@ -13,12 +12,23 @@ Asteroid asteroids[ASTEROID_COUNT];
 #define MIN_ASTEROID_ACCELERATION 0.05f
 #define MAX_ASTEROID_ACCELERATION 0.1f
 #define ASTEROID_ANGULAR_VELOCITY 10.f
-#define SHIP_ANGULAR_VELOCITY 45.f
+#define SHIP_ANGULAR_VELOCITY 60.f
 #define SHIP_MAX_ACCEL 0.01f
+
+
+#define SHIP_WIDTH 0.01f
+#define SHIP_HEIGHT 0.01f
+
+#define ASTEROID_WIDTH 0.01f
+#define ASTEROID_HEIGHT 0.01f
 
 
 #define DEG_TO_RAD 3.14159265359/180.0;
 
+struct Rect {
+	Vec2f position;
+	f32 width, height;
+};
 static bool gameInitialized = false;
 
 static u32 clamp(u32 v, u32 min, u32 max)
@@ -53,7 +63,40 @@ static f32 RandomF32Normalized()
 {
 	return (f32)(((f32)rand()) / RAND_MAX);
 }
-void GameLoop(Controls controls, u64 dt, u64 frequency)
+//TODO: proper collision detection using renderingcontext?
+static bool CollisionCheck(Rect r1, Rect r2)
+{
+	if(r1.position.x < r2.position.x+r2.width && r1.position.x+r1.width > r2.position.x
+			&& r1.position.y+r1.height > r2.position.y && r1.position.y < r2.position.y+r2.height){
+		return true;
+	}
+	return false;
+}
+//TODO: proper collision detection using renderingcontext?
+static bool CollisionDetected(RenderingContext ctx)
+{
+	//TODO: this is kind of stupid, need to fix collision to work in a better way...
+	//the rectangles are kind of fucked because the textures themselves aren't rectangles.
+	f32 entitySize = 0.7f*((f32)ctx.textureSize / (f32)ctx.width);
+
+	Rect shipRect = {0};
+	shipRect.position = globalShip.pos;
+	shipRect.width = entitySize;
+	shipRect.height = entitySize;
+
+	for(u32 i = 0; i < ASTEROID_COUNT; ++i){
+		Asteroid *ast = &asteroids[i];
+		Rect asteroidRect = {0};
+		asteroidRect.position = ast->pos;
+		asteroidRect.width = entitySize;
+		asteroidRect.height = entitySize;
+		if(CollisionCheck(shipRect, asteroidRect)){
+			return true;
+		}
+	}
+	return false;
+}
+void GameLoop(GameState gameState)
 {
 	if(!gameInitialized){
 		gameInitialized = true;
@@ -72,18 +115,18 @@ void GameLoop(Controls controls, u64 dt, u64 frequency)
 		}
 	}
 
-	f64 timeElapsedInSeconds = (f64)dt/(f64)frequency;
+	f64 timeElapsedInSeconds = (f64)gameState.dt/(f64)gameState.frequency;
 	f32 addedAcceleration = (f32)(timeElapsedInSeconds*SHIP_ACCELERATION);
-	if(controls.upPressed){
+	if(gameState.controls.upPressed){
 		f32 orientationX = cosf(DegreeToRadians(-globalShip.angle));
 		f32 orientationY = sinf(DegreeToRadians(-globalShip.angle));
 		globalShip.acceleration.x += addedAcceleration*timeElapsedInSeconds*orientationX;
 		globalShip.acceleration.y += addedAcceleration*timeElapsedInSeconds*orientationY;
 	}
-	if(controls.leftPressed){
+	if(gameState.controls.leftPressed){
 		globalShip.angle -= timeElapsedInSeconds*SHIP_ANGULAR_VELOCITY;
 	}
-	if(controls.rightPressed){
+	if(gameState.controls.rightPressed){
 		globalShip.angle += timeElapsedInSeconds*SHIP_ANGULAR_VELOCITY;
 	}
 
@@ -101,5 +144,10 @@ void GameLoop(Controls controls, u64 dt, u64 frequency)
 			ast->angle -= 360;
 		}
 		RepositionEntity(&ast->pos);
+	}
+
+
+	if(CollisionDetected(gameState.renderCtx)){
+		gameInitialized = false;
 	}
 }

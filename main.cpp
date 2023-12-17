@@ -53,6 +53,7 @@ AnimatedSprite LoadAnimatedSprite(SDL_Renderer* renderer, const char** paths, u3
 void RenderGame(SDL_Renderer* renderer)
 {
 	//TODO: Not working properly. check numbers in debugger.
+	SDL_SetRenderDrawColor(renderer, 0xff, 0x00, 0x00, 0xff);
 	const i32 HALF_SHIP_WIDTH = SHIP_TEXTURE_WIDTH/2;
 	SDL_Rect r = {(i32)(RENDER_WIDTH*globalShip.pos.x - HALF_SHIP_WIDTH), (i32)(RENDER_HEIGHT - RENDER_HEIGHT*globalShip.pos.y)-HALF_SHIP_WIDTH, 50, 50};
 	f64 angle = (f64)globalShip.angle;
@@ -68,13 +69,16 @@ void RenderGame(SDL_Renderer* renderer)
 		}
 	}
 	SDL_RenderCopyEx(renderer, shipTexture, NULL, &r, 90.0+angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
+	//SDL_RenderDrawRect(renderer, &r);
+
 	const i32 HALF_ASTEROID_WIDTH = ASTEROID_TEXTURE_WIDTH/2;
 	for(u32 i = 0; i < ASTEROID_COUNT; ++i){
 		Asteroid *asteroid = &asteroids[i];
 		i32 x = (i32)(RENDER_WIDTH*asteroid->pos.x) - HALF_SHIP_WIDTH;
-		i32 y = (i32)(RENDER_HEIGHT*asteroid->pos.y) - HALF_SHIP_WIDTH;
+		i32 y = (i32)(RENDER_HEIGHT - RENDER_HEIGHT*asteroid->pos.y) - HALF_SHIP_WIDTH;
 		SDL_Rect asteroidRect = {x, y, ASTEROID_TEXTURE_WIDTH, ASTEROID_TEXTURE_HEIGHT};
 		SDL_RenderCopyEx(renderer, asteroidTexture, NULL, &asteroidRect, asteroid->angle, NULL, SDL_RendererFlip::SDL_FLIP_NONE);
+		//SDL_RenderDrawRect(renderer, &asteroidRect);
 	}
 }
 int main(int, char**)
@@ -115,6 +119,7 @@ int main(int, char**)
 	renderCtx.height = RENDER_HEIGHT;
 	renderCtx.width = RENDER_WIDTH;
 	renderCtx.pitch = renderCtx.bpp * renderCtx.width;
+	renderCtx.textureSize = SHIP_TEXTURE_WIDTH;
 
 	asteroidTexture = LoadTexture(renderer, "assets/asteroid.bmp");
 	const char* shipSpritePaths[] = {
@@ -123,10 +128,10 @@ int main(int, char**)
 		"assets/ship_frames/ship_f3.bmp",
 		"assets/ship_frames/ship_f4.bmp",
 		"assets/ship_frames/ship_f5.bmp",
-		"assets/ship_frames/ship_f6.bmp",
-		"assets/ship_frames/ship_f7.bmp",
+	//	"assets/ship_frames/ship_f6.bmp",
+	//	"assets/ship_frames/ship_f7.bmp",
 	};
-	shipSprite = LoadAnimatedSprite(renderer, shipSpritePaths, 7);
+	shipSprite = LoadAnimatedSprite(renderer, shipSpritePaths, 5);
 
 
 	bool quit = false;
@@ -137,9 +142,12 @@ int main(int, char**)
 	u64 startTime = SDL_GetPerformanceCounter();
 	u64 endTime = SDL_GetPerformanceCounter();
 	f64 targetFPS = 60;
+	GameState gameState = {0};
+	gameState.renderCtx = renderCtx;
+	gameState.frequency = frequency;
 	while(!quit)
 	{
-		u64 dt = endTime - startTime;
+		gameState.dt = endTime - startTime;
 		SDL_Event e;
 		while (SDL_PollEvent(&e) != NULL){
 			switch(e.type){
@@ -148,13 +156,13 @@ int main(int, char**)
 					break;
 				case SDL_KEYDOWN:
 					if(e.key.keysym.sym == SDLK_RIGHT){
-						controls.rightPressed = true;
+						gameState.controls.rightPressed = true;
 					}
 					else if(e.key.keysym.sym == SDLK_LEFT){
-						controls.leftPressed = true;
+						gameState.controls.leftPressed = true;
 					}
 					else if(e.key.keysym.sym == SDLK_UP){
-						controls.upPressed = true;
+						gameState.controls.upPressed = true;
 						shipSprite.active = true;
 					}
 					else if(e.key.keysym.sym == SDLK_ESCAPE){
@@ -163,13 +171,13 @@ int main(int, char**)
 					break;
 				case SDL_KEYUP:
 					if(e.key.keysym.sym == SDLK_RIGHT){
-						controls.rightPressed = false;
+						gameState.controls.rightPressed = false;
 					}
 					else if(e.key.keysym.sym == SDLK_LEFT){
-						controls.leftPressed = false;
+						gameState.controls.leftPressed = false;
 					}
 					else if(e.key.keysym.sym == SDLK_UP){
-						controls.upPressed = false;
+						gameState.controls.upPressed = false;
 						shipSprite.active = false;
 					}
 					break;
@@ -177,13 +185,13 @@ int main(int, char**)
 					break;
 			}
 		}
-		if(dt > (f64)frequency/targetFPS){
+		if(gameState.dt > (f64)frequency/targetFPS){
 			startTime = endTime;
-			printf("dt:%llu\n", dt);
-			//printf("%llu\n", SDL_GetPerformanceFrequency());
+			printf("dt:%llu\n", gameState.dt);
+			SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xff);
 			SDL_RenderClear(renderer);
 			SDL_Rect r = {RENDER_WIDTH/2-25, RENDER_HEIGHT/2-25, 50, 50};
-			GameLoop(controls, dt, frequency);
+			GameLoop(gameState);
 			//TODO: Set a boundary of game logic vs rendering. does the game logic return state for the rendering to look at?
 			RenderGame(renderer);
 			SDL_RenderPresent(renderer);

@@ -16,6 +16,7 @@ struct RenderingContext {
 	u32 width;
 	u32 height;
 	u32 pitch;
+	i32 textureSize;
 	void* pixels;
 };
 struct Vec2 {
@@ -41,6 +42,18 @@ struct Vec2f{
 		//return Vec2f{this->x + rhs.x, this->y + rhs.y};
 		this->x += rhs.x;
 		this->y += rhs.y;
+		return *this;
+	}
+	inline Vec2f operator +=(f32 const&rhs) {
+		//return Vec2f{this->x + rhs.x, this->y + rhs.y};
+		this->x += rhs;
+		this->y += rhs;
+		return *this;
+	}
+	inline Vec2f operator -=(f32 const&rhs) {
+		//return Vec2f{this->x + rhs.x, this->y + rhs.y};
+		this->x -= rhs;
+		this->y -= rhs;
 		return *this;
 	}
 };
