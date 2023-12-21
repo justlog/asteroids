@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <stdio.h>
+#include "SDL_render.h"
 #include "common.h"
 #include "game.h"
 #define EXIT(s) printf("SDL could not " s ", SDL_Error %s\n", SDL_GetError()); exit(1);
@@ -179,7 +180,7 @@ int main(int, char**)
 		}
 		if(dt > (f64)frequency/targetFPS){
 			startTime = endTime;
-			printf("dt:%llu\n", dt);
+			printf("dt:%lu\n", dt);
 			//printf("%llu\n", SDL_GetPerformanceFrequency());
 			SDL_RenderClear(renderer);
 			SDL_Rect r = {RENDER_WIDTH/2-25, RENDER_HEIGHT/2-25, 50, 50};
